@@ -1,5 +1,7 @@
 from typing import Optional
 from fastapi import FastAPI
+from pydantic import BaseModel
+import uvicorn
 
 app = FastAPI()
 
@@ -25,3 +27,17 @@ def show(id: int): # you have to accept variable inside the function
 @app.get('blog/{id}/comments')
 def comments(id):
     return {'data': 'comments'}
+
+class Blog(BaseModel):
+    title: str
+    body: str
+    published: Optional[bool]
+    
+
+@app.post('/blog')
+def create_blog(blog: Blog):
+    return {'data': f"Blog is created with a title as {blog.title}"}
+
+# if __name__ == '__main__':
+#     uvicorn.run(app,host='localhost',port=9000)
+
