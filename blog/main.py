@@ -1,8 +1,9 @@
 from fastapi import Depends, FastAPI, HTTPException, status, Response
 from typing import List
 from sqlalchemy.orm import Session
-from . import models, schemas
+from . import models, schemas, hashing
 from .database import SessionLocal, engine
+
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -38,7 +39,7 @@ def destroy(id, db: Session = Depends(get_db)):
 
 
 @app.put('/blog/{id}', status_code=status.HTTP_202_ACCEPTED)
-def update(id, blog: schemas.Blog, db: Session = Depends(get_db)):
+def update(id:int, blog: schemas.Blog, db: Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id)
     if not blog.first():
         raise HTTPException(status_code=HTTPException.HTTP_404_NOT_FOUND,
@@ -58,14 +59,22 @@ def all(db: Session = Depends(get_db)):
 def show(id, response: Response, db: Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id).first()
     if not blog:
-        raise HTTPException(status_code=HTTPException.HTTP_404_NOT_FOUND,
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Blog with the id {id} does not exist")
     return blog
 
-@app.post('/user')
+@app.post('/user', response_model=schemas.ShowUser)
 def create_user(user: schemas.User, db: Session = Depends(get_db)):
-    new_user = models.User(name=user.name, email=user.email, password=user.password)
+    new_user = models.User(name=user.name, email=user.email, password=hashing.Hash.bcrypt(user.password))
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
+
+@app.get('/user/{id}', status_code=status.HTTP_200_OK, response_model=schemas.ShowUser)
+def get_user(id:int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user.id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"User with the id {id} does not exist")
+    return user   
