@@ -6,9 +6,10 @@ from ..repository import user
 
 router = APIRouter(
     prefix="/user",
-    tags=["users"],)
+    tags=["users"])
 
 get_db = database.get_db
+
 
 @router.post('/', response_model=schemas.ShowUser)
 def create_user(user: schemas.User, db: Session = Depends(get_db)):
